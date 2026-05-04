@@ -1,26 +1,41 @@
 import 'package:flutter/material.dart';
+import 'screens/login_screen.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
+// Verde pacay: tono verde oscuro inspirado en la vaina del pacay (Inga edulis)
+const Color _verdePacay = Color(0xFF2D6A2F);
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Depp Guard',
+      title: 'DeepGuard',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: _verdePacay,
+          brightness: Brightness.light,
+        ),
       ),
-      home: const MyHomePage(title: 'Depp Guard'),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: _verdePacay,
+          brightness: Brightness.dark,
+        ),
+      ),
+      home: const LoginScreen(),
       debugShowCheckedModeBanner: false,
     );
   }
 }
 
+// ---- Código de ejemplo original (ya no se usa como home) ----
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
 
@@ -44,7 +59,6 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-
         title: Text(widget.title),
       ),
       body: Center(
