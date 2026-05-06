@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -10,6 +11,7 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -17,10 +19,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscureConfirm = true;
   bool _isLoading = false;
   bool _acceptTerms = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
     _nameController.dispose();
+    _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -28,6 +32,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _register() async {
+    setState(() => _errorMessage = null);
     if (!_acceptTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -38,13 +43,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      await Future.delayed(const Duration(seconds: 2));
-      setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cuenta creada exitosamente')),
+      try {
+        await AuthService.register(
+          correo: _emailController.text.trim(),
+          nombreUsuario: _usernameController.text.trim(),
+          nombreCompleto: _nameController.text.trim(),
+          password: _passwordController.text,
         );
-        Navigator.of(context).pop();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Cuenta creada exitosamente')),
+          );
+          Navigator.of(context).pop();
+        }
+      } on AuthException catch (e) {
+        setState(() => _errorMessage = e.message);
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
       }
     }
   }
@@ -117,7 +132,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          // Nombre
+                          // Banner de error del servidor
+                          if (_errorMessage != null) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colorScheme.errorContainer,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: colorScheme.onErrorContainer,
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _errorMessage!,
+                                      style: TextStyle(
+                                        color: colorScheme.onErrorContainer,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
+                          // Nombre completo
                           TextFormField(
                             controller: _nameController,
                             keyboardType: TextInputType.name,
@@ -136,6 +185,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               }
                               if (value.trim().length < 3) {
                                 return 'Nombre muy corto';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Nombre de usuario
+                          TextFormField(
+                            controller: _usernameController,
+                            keyboardType: TextInputType.text,
+                            textInputAction: TextInputAction.next,
+                            decoration: InputDecoration(
+                              labelText: 'Nombre de usuario',
+                              hintText: 'min. 3 caracteres',
+                              prefixIcon: const Icon(Icons.alternate_email),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Ingresa un nombre de usuario';
+                              }
+                              if (value.trim().length < 3) {
+                                return 'Mínimo 3 caracteres';
+                              }
+                              if (value.trim().length > 50) {
+                                return 'Máximo 50 caracteres';
+                              }
+                              if (!RegExp(r'^[\w]+$').hasMatch(value.trim())) {
+                                return 'Solo letras, números y guiones bajos';
                               }
                               return null;
                             },
